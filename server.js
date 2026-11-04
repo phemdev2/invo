@@ -299,9 +299,34 @@ function createServer(
   return { server, init };
 }
 
-module.exports = { createServer, clean, totals };
+/* ---------- Vercel handler ---------- */
 
-/* ---------- Start ---------- */
+// Vercel needs the default export to be a request handler (req, res).
+// The filesystem is read-only except /tmp, and /tmp is NOT persistent,
+// so saved quotations on Vercel will be lost. Use a real database or a
+// host with a persistent disk for production.
+let shared;
+function handler(req, res) {
+  if (!shared) {
+    const { server, init } = createServer(process.env.DATA_DIR || '/tmp/data');
+    shared = { server, ready: init() };
+  }
+  shared.ready
+    .then(() => shared.server.emit('request', req, res))
+    .catch(err => {
+      console.error(err);
+      shared = undefined; // retry initialisation on the next request
+      res.statusCode = 500;
+      res.end('Server error');
+    });
+}
+
+module.exports = handler;
+module.exports.createServer = createServer;
+module.exports.clean = clean;
+module.exports.totals = totals;
+
+/* ---------- Start (local only: node server.cjs) ---------- */
 
 if (require.main === module) {
   const PORT = Number(process.env.PORT) || 3000;
