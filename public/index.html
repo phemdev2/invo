@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quotation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="toolbar no-print">
+    <div class="toolbar-inner">
+      <div class="toolbar-left">
+        <strong class="toolbar-title">Quotation</strong>
+        <select id="quoteSelect" aria-label="Saved quotations"></select>
+        <span id="saveStatus" class="save-status" role="status" aria-live="polite"></span>
+      </div>
+      <div class="actions">
+        <button type="button" id="newBtn">New quote</button>
+        <button type="button" id="deleteBtn" class="danger">Delete</button>
+        <button type="button" id="exportBtn">Export</button>
+        <label class="btn" for="importFile">Import</label>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+        <button type="button" id="printBtn" class="primary">Print / PDF</button>
+      </div>
+    </div>
+  </header>
+  <div id="offlineBanner" class="banner no-print" hidden>
+    Can&rsquo;t reach the server, so nothing will be saved. Start it with <code>npm start</code> and open
+    <code>http://localhost:3000</code>.
+  </div>
+
+  <main>
+    <article class="sheet">
+
+      <!-- Black header band -->
+      <header class="sheet-head">
+        <div class="brand">
+          <input class="brand-name" data-bind="company.name" aria-label="Company name" placeholder="Company name">
+          <input data-bind="company.address" aria-label="Company address" placeholder="Address">
+          <div class="contact screen-only">
+            <input data-bind="company.phone" aria-label="Phone" placeholder="Phone">
+            <input data-bind="company.email" aria-label="Email" placeholder="Email">
+          </div>
+          <div class="head-contact print-only">
+            <span data-text="company.phone"></span> &nbsp;|&nbsp; <span data-text="company.email"></span>
+          </div>
+        </div>
+        <div class="doc-title">
+          <h1>QUOTATION</h1>
+          <span id="statusBadge" class="badge no-print"></span>
+        </div>
+      </header>
+      <div class="red-bar"></div>
+
+      <div class="sheet-body">
+
+        <!-- Client + meta -->
+        <section class="parties">
+          <div class="client">
+            <span class="label">Quotation to</span>
+            <input class="client-name" data-bind="client.name" aria-label="Client name" placeholder="Client name">
+            <input class="client-address" data-bind="client.address" aria-label="Client address" placeholder="Client address">
+          </div>
+
+          <dl class="meta">
+            <div><dt>No:</dt><dd><input data-bind="meta.no" aria-label="Quotation number"></dd></div>
+            <div>
+              <dt>Date:</dt>
+              <dd>
+                <input class="screen-only" type="date" data-bind="meta.date" aria-label="Date">
+                <span class="print-only meta-text" id="dateText"></span>
+              </dd>
+            </div>
+            <div>
+              <dt>Validity:</dt>
+              <dd>
+                <span class="screen-only validity-edit">
+                  <input type="number" min="0" step="1" inputmode="numeric" data-bind="meta.validity" data-type="number" aria-label="Validity in days">
+                  <span>days</span>
+                </span>
+                <span class="print-only meta-text" id="validityText"></span>
+              </dd>
+            </div>
+            <div><dt>Delivery:</dt><dd><input data-bind="meta.delivery" aria-label="Delivery terms"></dd></div>
+          </dl>
+        </section>
+        <p class="valid-until no-print" id="validUntil"></p>
+
+        <!-- Items -->
+        <div class="table-wrap">
+          <table class="items">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Unit price</th>
+                <th>Qty</th>
+                <th>Total</th>
+                <th class="no-print act"><span class="sr-only">Remove</span></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+        <button type="button" class="add-row no-print" id="addRowBtn">+ Add item</button>
+
+        <!-- Totals -->
+        <section class="totals">
+          <div class="row sub">
+            <span class="lbl">Subtotal</span>
+            <strong class="amt" id="subtotal"></strong>
+            <span class="pad no-print"></span>
+          </div>
+          <div class="row vat">
+            <span class="lbl">
+              <span class="screen-only vat-edit">VAT (<input class="vat-input" type="number" min="0" step="any" inputmode="decimal" data-bind="vatRate" data-type="number" aria-label="VAT rate percent">%)</span>
+              <span class="print-only" id="vatLabel"></span>
+            </span>
+            <strong class="amt" id="vat"></strong>
+            <span class="pad no-print"></span>
+          </div>
+          <div class="row grand">
+            <span class="lbl">Grand total</span>
+            <strong class="amt" id="grand"></strong>
+            <span class="pad no-print"></span>
+          </div>
+        </section>
+
+        <!-- Payment -->
+        <section class="payment">
+          <span class="label">Payment / banking details</span>
+          <div class="pay-grid">
+            <div class="pay-row"><span>Acct No:</span><input data-bind="payment.acct" aria-label="Account number"></div>
+            <div class="pay-row"><span>Bank:</span><input data-bind="payment.bank" aria-label="Bank"></div>
+            <div class="pay-row"><span>Acct Name:</span><input data-bind="payment.name" aria-label="Account name"></div>
+            <div class="pay-row"><span>TIN:</span><input data-bind="payment.tin" aria-label="TIN"></div>
+          </div>
+        </section>
+
+        <p class="thanks">THANK YOU FOR YOUR PATRONAGE</p>
+        <p class="contact-line">
+          <span data-text="company.phone"></span> &nbsp;|&nbsp;
+          <span data-text="company.email"></span> &nbsp;|&nbsp;
+          <span data-text="company.address"></span>
+        </p>
+
+        <!-- Signature -->
+        <div class="signature">
+          <input class="signer" data-bind="signer" aria-label="Signer name" placeholder="Name">
+          <div class="sign-line"></div>
+          <span class="sign-for">For: <span data-text="company.name"></span></span>
+          <span class="sign-label">Authorized Signature</span>
+        </div>
+      </div>
+
+      <!-- Black footer band -->
+      <footer class="sheet-foot">
+        <p class="fineprint" id="fineprint"></p>
+      </footer>
+    </article>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
