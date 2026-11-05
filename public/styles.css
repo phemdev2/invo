@@ -73,67 +73,15 @@ button:focus-visible, .btn:focus-visible, input:focus-visible, textarea:focus-vi
   font-size: 12px; font-weight: 700; text-align: center;
 }
 
-/* Status chips */
-.chip {
-  display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px;
-  font-size: 11px; font-weight: 700; letter-spacing: .03em; vertical-align: middle;
-  background: #eceef1; color: #4a525c;
-}
-.chip-sent { background: #e4ecfb; color: #1d3f93; }
-.chip-approved { background: #e3f5ee; color: var(--ok-ink); }
-.chip-rejected { background: #fdeceb; color: var(--danger); }
-
-/* Status select + VAT tick box inside the sheet */
-.sheet select {
-  font: inherit; font-weight: 700; font-size: 12px; color: inherit;
-  background: transparent; border: 1px solid transparent; border-radius: 6px;
-  padding: 4px 6px; width: 100%; min-width: 0; cursor: pointer;
-}
-.sheet select:hover { border-color: var(--pink-line); }
-.sheet select:focus { border-color: var(--red); background: #fff; }
-.sheet input[type="checkbox"] { width: auto; margin: 0 4px 0 0; padding: 0; accent-color: var(--red); cursor: pointer; }
-.vat-check { display: inline-flex; align-items: center; cursor: pointer; }
-.totals .row.vat.off { opacity: .65; }
-.totals .row.vat.off .vat-input { text-decoration: line-through; }
-
-/* Revenue dialog */
-.rev-note { margin: 0; font-size: 13px; color: var(--muted); }
-.rev-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
-.rev-filters select, .rev-filters input {
-  font: inherit; font-size: 14px; padding: 7px 10px;
-  border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink);
-}
-.rev-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.tile { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.tile span { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
-.tile strong { font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.tile.main { background: var(--red); border-color: var(--red); }
-.tile.main span, .tile.main strong { color: #fff; }
-.tile.main strong { font-size: 18px; }
-.rev-pending { margin: 0; font-size: 13px; color: var(--muted); }
-.rev-body h3 { margin: 6px 0 6px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--red); }
-.rev-scroll { overflow-x: auto; }
-.rev-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
-.rev-table th, .rev-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
-.rev-table th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-.rev-table .num { text-align: right; }
-.rev-table tfoot td { font-weight: 700; border-bottom: 0; }
-@media (max-width: 560px) {
-  .rev-table { font-size: 12px; }
-  .rev-table th, .rev-table td { padding: 7px 4px; }
-  .rev-tiles { grid-template-columns: 1fr 1fr; }
-  .tile.main { grid-column: 1 / -1; }
-}
-
 /* Saved quotations dialog */
-dialog#listDialog, dialog#revenueDialog {
+dialog#listDialog {
   border: 0; padding: 0; border-radius: 14px;
   width: min(680px, calc(100vw - 24px)); max-height: min(80vh, 680px);
   color: var(--ink); background: var(--paper);
   box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
 }
-dialog#listDialog::backdrop, dialog#revenueDialog::backdrop { background: rgba(17, 17, 17, .55); }
-dialog#listDialog[open], dialog#revenueDialog[open] { display: flex; }
+dialog#listDialog::backdrop { background: rgba(17, 17, 17, .55); }
+dialog#listDialog[open] { display: flex; }
 .dialog-box { display: flex; flex-direction: column; gap: 12px; padding: 18px; width: 100%; min-height: 0; }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; }
 .dialog-head h2 { margin: 0; font-size: 18px; }
@@ -149,9 +97,7 @@ dialog#listDialog[open], dialog#revenueDialog[open] { display: flex; }
 }
 .list-row.current { border-color: var(--red); background: var(--pink); }
 .list-main { display: flex; flex-direction: column; min-width: 0; }
-.list-main > span:not(.list-title) { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.list-title { display: flex; align-items: center; min-width: 0; }
-.list-title .chip { margin-left: 8px; flex: none; }
+.list-main span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-meta { display: flex; flex-direction: column; align-items: flex-end; font-size: 13px; white-space: nowrap; }
 .list-meta span { color: var(--muted); }
 .list-actions { display: flex; gap: 6px; }
@@ -414,8 +360,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .items td .price-text { display: block !important; text-align: right; font-weight: 700; padding-right: 2px; font-variant-numeric: tabular-nums; }
   .totals .row { grid-template-columns: 1fr 140px; }
   .totals .pad { display: none; }
-  .totals .row.vat.off { display: none; }
-  .sheet input::placeholder, .sheet textarea::placeholder { color: transparent; }
   .vat-edit { display: none; }
 
   .signature { margin-bottom: 14mm; }
