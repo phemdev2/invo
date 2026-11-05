@@ -12,11 +12,13 @@
     <div class="toolbar-inner">
       <div class="toolbar-left">
         <strong class="toolbar-title">Quotation</strong>
-        <select id="quoteSelect" aria-label="Saved quotations"></select>
+        <button type="button" id="listBtn">Saved quotes <span id="listCount" class="count">0</span></button>
+        <button type="button" id="revenueBtn">Revenue</button>
         <span id="saveStatus" class="save-status" role="status" aria-live="polite"></span>
       </div>
       <div class="actions">
         <button type="button" id="newBtn">New quote</button>
+        <button type="button" id="saveBtn" title="Save now (Ctrl+S)">Save</button>
         <button type="button" id="deleteBtn" class="danger">Delete</button>
         <button type="button" id="exportBtn">Export</button>
         <label class="btn" for="importFile">Import</label>
@@ -83,6 +85,21 @@
               </dd>
             </div>
             <div><dt>Delivery:</dt><dd><input data-bind="meta.delivery" aria-label="Delivery terms"></dd></div>
+            <div class="no-print meta-status">
+              <dt>Status:</dt>
+              <dd>
+                <select data-bind="status" aria-label="Quotation status">
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent to client</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </dd>
+            </div>
+            <div class="no-print" id="approvedRow" hidden>
+              <dt>Approved on:</dt>
+              <dd><input type="date" data-bind="approvedDate" aria-label="Approval date"></dd>
+            </div>
           </dl>
         </section>
         <p class="valid-until no-print" id="validUntil"></p>
@@ -111,9 +128,11 @@
             <strong class="amt" id="subtotal"></strong>
             <span class="pad no-print"></span>
           </div>
-          <div class="row vat">
+          <div class="row vat" id="vatRow">
             <span class="lbl">
-              <span class="screen-only vat-edit">VAT (<input class="vat-input" type="number" min="0" step="any" inputmode="decimal" data-bind="vatRate" data-type="number" aria-label="VAT rate percent">%)</span>
+              <span class="screen-only vat-edit">
+                <label class="vat-check"><input type="checkbox" data-bind="vatEnabled" aria-label="Apply VAT"> VAT (</label><input class="vat-input" type="number" min="0" step="any" inputmode="decimal" data-bind="vatRate" data-type="number" aria-label="VAT rate percent">%)
+              </span>
               <span class="print-only" id="vatLabel"></span>
             </span>
             <strong class="amt" id="vat"></strong>
@@ -159,6 +178,47 @@
       </footer>
     </article>
   </main>
+
+  <dialog id="listDialog" class="no-print" aria-labelledby="listTitle">
+    <div class="dialog-box">
+      <div class="dialog-head">
+        <h2 id="listTitle">Saved quotations</h2>
+        <button type="button" id="listClose" class="icon-btn" aria-label="Close">&#10005;</button>
+      </div>
+      <input id="listSearch" type="search" placeholder="Search by number or client" aria-label="Search saved quotations" autocomplete="off">
+      <div id="listBody" class="list-body"></div>
+    </div>
+  </dialog>
+
+  <dialog id="revenueDialog" class="no-print" aria-labelledby="revTitle">
+    <div class="dialog-box">
+      <div class="dialog-head">
+        <h2 id="revTitle">Revenue</h2>
+        <button type="button" id="revClose" class="icon-btn" aria-label="Close">&#10005;</button>
+      </div>
+      <p class="rev-note">Counts <strong>approved</strong> quotations only, by their approval date.</p>
+      <div class="rev-filters">
+        <select id="revPeriod" aria-label="Period">
+          <option value="all">All time</option>
+          <option value="month">This month</option>
+          <option value="lastmonth">Last month</option>
+          <option value="year">This year</option>
+          <option value="custom">Custom range</option>
+        </select>
+        <span id="revCustom" hidden>
+          <input type="date" id="revFrom" aria-label="From date"> to <input type="date" id="revTo" aria-label="To date">
+        </span>
+      </div>
+      <div class="rev-tiles">
+        <div class="tile main"><span>Revenue (excl. VAT)</span><strong id="revRevenue"></strong></div>
+        <div class="tile"><span>VAT charged</span><strong id="revVat"></strong></div>
+        <div class="tile"><span>Total billed (incl. VAT)</span><strong id="revTotal"></strong></div>
+        <div class="tile"><span>Approved quotations</span><strong id="revCount"></strong></div>
+      </div>
+      <p id="revPending" class="rev-pending"></p>
+      <div id="revBody" class="list-body"></div>
+    </div>
+  </dialog>
 
   <script src="script.js"></script>
 </body>
