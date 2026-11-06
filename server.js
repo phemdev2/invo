@@ -24,11 +24,15 @@ const num = (v, { min = 0, max = 1e12 } = {}) => {
 
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
+const STATUSES = ['draft', 'sent', 'approved', 'rejected'];
+const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
 // Whitelist the fields we store and clamp their values; anything else in the body is dropped.
 function clean(input) {
   const b = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const items = Array.isArray(b.items) ? b.items.slice(0, 200) : [];
-  const date = typeof b.meta?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.meta.date) ? b.meta.date : '';
+  const date = isDate(b.meta?.date) ? b.meta.date : '';
+  const status = STATUSES.includes(b.status) ? b.status : 'draft';
 
   return {
     company: {
@@ -54,6 +58,10 @@ function clean(input) {
       qty: num(i?.qty)
     })),
     vatRate: num(b.vatRate, { max: 100 }),
+    // VAT is on unless explicitly switched off, so quotations saved before this option existed keep their VAT.
+    vatEnabled: b.vatEnabled !== false,
+    status,
+    approvedDate: status === 'approved' && isDate(b.approvedDate) ? b.approvedDate : '',
     payment: {
       acct: str(b.payment?.acct, 60),
       bank: str(b.payment?.bank, 120),
@@ -66,18 +74,26 @@ function clean(input) {
 
 function totals(q) {
   const subtotal = round2(q.items.reduce((s, i) => s + i.price * i.qty, 0));
-  const vat = round2((subtotal * q.vatRate) / 100);
+  const vat = q.vatEnabled === false ? 0 : round2((subtotal * q.vatRate) / 100);
   return { subtotal, vat, grand: round2(subtotal + vat) };
 }
 
-const summary = q => ({
-  id: q.id,
-  no: q.meta.no,
-  client: q.client.name,
-  date: q.meta.date,
-  grand: totals(q).grand,
-  updatedAt: q.updatedAt
-});
+// What the list (and the revenue report) needs, without sending every line item.
+const summary = q => {
+  const t = totals(q);
+  return {
+    id: q.id,
+    no: q.meta.no,
+    client: q.client.name,
+    date: q.meta.date,
+    status: q.status,
+    approvedDate: q.approvedDate,
+    subtotal: t.subtotal,
+    vat: t.vat,
+    grand: t.grand,
+    updatedAt: q.updatedAt
+  };
+};
 
 /* ======================================================================
    Storage
