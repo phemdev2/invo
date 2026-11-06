@@ -454,6 +454,10 @@ function storeFromEnv(env = process.env) {
   if (url || key) {
     throw new Error('Set both SUPABASE_URL and SUPABASE_SERVICE_KEY to use Supabase, or neither to use the JSON file.');
   }
+  // Vercel's filesystem is read-only, so the JSON file store can't save anything there.
+  if (env.VERCEL) {
+    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are not set for this Vercel environment (Production/Preview). Add them in Project Settings -> Environment Variables, then redeploy.');
+  }
   return createFileStore(env.DATA_DIR || path.join(__dirname, 'data'));
 }
 
