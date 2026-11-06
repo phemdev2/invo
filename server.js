@@ -437,7 +437,7 @@ function createServer({ store, enforceLocalHost = false } = {}) {
 function loadEnvFile(file) {
   let text;
   try { text = fs.readFileSync(file, 'utf8'); } catch (_) { return; }
-  for (const line of text.replace(/^﻿/, '').split(/\r?\n/)) {
+  for (const line of text.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     if (/^\s*(#|$)/.test(line)) continue;
     const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
     if (!m) continue;
@@ -457,9 +457,39 @@ function storeFromEnv(env = process.env) {
   return createFileStore(env.DATA_DIR || path.join(__dirname, 'data'));
 }
 
-module.exports = { createServer, createFileStore, createSupabaseStore, storeFromEnv, clean, totals };
+/* ---------- Vercel / serverless entry ---------- */
 
-/* ---------- Start ---------- */
+// Vercel needs the module's default export to be a (req, res) function.
+// The server and store are created once per warm instance and reused.
+let cached = null;
+
+function handler(req, res) {
+  try {
+    if (!cached) {
+      const { server, init } = createServer({ store: storeFromEnv() });
+      cached = { server, ready: init() };
+    }
+  } catch (err) {
+    console.error(err);
+    return sendJson(res, 500, { error: 'Server error' });
+  }
+
+  const current = cached;
+  current.ready
+    .then(() => current.server.emit('request', req, res))
+    .catch(err => {
+      console.error(err);
+      if (cached === current) cached = null; // let the next request retry init
+      if (!res.headersSent) sendJson(res, 500, { error: 'Server error' });
+      else res.end();
+    });
+}
+
+module.exports = Object.assign(handler, {
+  createServer, createFileStore, createSupabaseStore, storeFromEnv, clean, totals
+});
+
+/* ---------- Start (local: node server.js) ---------- */
 
 if (require.main === module) {
   loadEnvFile(path.join(__dirname, '.env'));
