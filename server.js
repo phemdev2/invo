@@ -24,15 +24,11 @@ const num = (v, { min = 0, max = 1e12 } = {}) => {
 
 const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
 
-const STATUSES = ['draft', 'sent', 'approved', 'rejected'];
-const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-
 // Whitelist the fields we store and clamp their values; anything else in the body is dropped.
 function clean(input) {
   const b = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
   const items = Array.isArray(b.items) ? b.items.slice(0, 200) : [];
-  const date = isDate(b.meta?.date) ? b.meta.date : '';
-  const status = STATUSES.includes(b.status) ? b.status : 'draft';
+  const date = typeof b.meta?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.meta.date) ? b.meta.date : '';
 
   return {
     company: {
@@ -58,10 +54,6 @@ function clean(input) {
       qty: num(i?.qty)
     })),
     vatRate: num(b.vatRate, { max: 100 }),
-    // VAT is on unless explicitly switched off, so quotations saved before this option existed keep their VAT.
-    vatEnabled: b.vatEnabled !== false,
-    status,
-    approvedDate: status === 'approved' && isDate(b.approvedDate) ? b.approvedDate : '',
     payment: {
       acct: str(b.payment?.acct, 60),
       bank: str(b.payment?.bank, 120),
@@ -74,26 +66,18 @@ function clean(input) {
 
 function totals(q) {
   const subtotal = round2(q.items.reduce((s, i) => s + i.price * i.qty, 0));
-  const vat = q.vatEnabled === false ? 0 : round2((subtotal * q.vatRate) / 100);
+  const vat = round2((subtotal * q.vatRate) / 100);
   return { subtotal, vat, grand: round2(subtotal + vat) };
 }
 
-// What the list (and the revenue report) needs, without sending every line item.
-const summary = q => {
-  const t = totals(q);
-  return {
-    id: q.id,
-    no: q.meta.no,
-    client: q.client.name,
-    date: q.meta.date,
-    status: q.status,
-    approvedDate: q.approvedDate,
-    subtotal: t.subtotal,
-    vat: t.vat,
-    grand: t.grand,
-    updatedAt: q.updatedAt
-  };
-};
+const summary = q => ({
+  id: q.id,
+  no: q.meta.no,
+  client: q.client.name,
+  date: q.meta.date,
+  grand: totals(q).grand,
+  updatedAt: q.updatedAt
+});
 
 /* ======================================================================
    Storage
@@ -437,7 +421,7 @@ function createServer({ store, enforceLocalHost = false } = {}) {
 function loadEnvFile(file) {
   let text;
   try { text = fs.readFileSync(file, 'utf8'); } catch (_) { return; }
-  for (const line of text.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+  for (const line of text.replace(/^﻿/, '').split(/\r?\n/)) {
     if (/^\s*(#|$)/.test(line)) continue;
     const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
     if (!m) continue;
@@ -454,46 +438,12 @@ function storeFromEnv(env = process.env) {
   if (url || key) {
     throw new Error('Set both SUPABASE_URL and SUPABASE_SERVICE_KEY to use Supabase, or neither to use the JSON file.');
   }
-  // Vercel's filesystem is read-only, so the JSON file store can't save anything there.
-  if (env.VERCEL) {
-    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are not set for this Vercel environment (Production/Preview). Add them in Project Settings -> Environment Variables, then redeploy.');
-  }
   return createFileStore(env.DATA_DIR || path.join(__dirname, 'data'));
 }
 
-/* ---------- Vercel / serverless entry ---------- */
+module.exports = { createServer, createFileStore, createSupabaseStore, storeFromEnv, clean, totals };
 
-// Vercel needs the module's default export to be a (req, res) function.
-// The server and store are created once per warm instance and reused.
-let cached = null;
-
-function handler(req, res) {
-  try {
-    if (!cached) {
-      const { server, init } = createServer({ store: storeFromEnv() });
-      cached = { server, ready: init() };
-    }
-  } catch (err) {
-    console.error(err);
-    return sendJson(res, 500, { error: 'Server error' });
-  }
-
-  const current = cached;
-  current.ready
-    .then(() => current.server.emit('request', req, res))
-    .catch(err => {
-      console.error(err);
-      if (cached === current) cached = null; // let the next request retry init
-      if (!res.headersSent) sendJson(res, 500, { error: 'Server error' });
-      else res.end();
-    });
-}
-
-module.exports = Object.assign(handler, {
-  createServer, createFileStore, createSupabaseStore, storeFromEnv, clean, totals
-});
-
-/* ---------- Start (local: node server.js) ---------- */
+/* ---------- Start ---------- */
 
 if (require.main === module) {
   loadEnvFile(path.join(__dirname, '.env'));
